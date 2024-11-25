@@ -6,6 +6,10 @@ from typing import List, Optional
 import mysql.connector
 from mysql.connector import errorcode
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI()
 
@@ -18,15 +22,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# データベース接続情報の設定
+#データベース接続情報の設定
 config = {
     'host': os.getenv("DB_HOST"),
     'user': os.getenv("DB_USER"),
     'password': os.getenv("DB_PASSWORD"),
     'database': os.getenv("DB_NAME"),
-    'client_flags': [mysql.connector.ClientFlag.SSL],
-    'ssl_ca': '/home/site/certificates/DigiCertGlobalRootG2.crt.pem'
 }
+
+# If running on Azure, add SSL configuration
+if os.getenv("AZURE_DEPLOYMENT", "false").lower() == "true":
+    config.update({
+        'client_flags': [mysql.connector.ClientFlag.SSL],
+        'ssl_ca': '/home/site/certificates/DigiCertGlobalRootG2.crt.pem'
+    })
 
 # Place モデルの定義
 class Place(BaseModel):
