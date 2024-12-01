@@ -28,6 +28,7 @@ config = {
     'user': os.getenv("DB_USER"),
     'password': os.getenv("DB_PASSWORD"),
     'database': os.getenv("DB_NAME"),
+    'charset': 'utf8mb4', # 日本語を扱うための設定
 }
 
 # If running on Azure, add SSL configuration
@@ -39,12 +40,12 @@ if os.getenv("AZURE_DEPLOYMENT", "false").lower() == "true":
 
 # Place モデルの定義
 class Place(BaseModel):
-    id: Optional[int] = None
+    place_id: Optional[int] = None  # Changed to match your table
     placename: str
     description: str
+    category: str
     latitude: float
     longitude: float
-    category: str
     url: str
 
 # データベース接続関数
@@ -61,28 +62,28 @@ def get_db_connection():
             raise HTTPException(status_code=500, detail=str(err))
 
 # places テーブルの作成
-@app.on_event("startup")
-async def create_tables():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS places (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                placename VARCHAR(255) NOT NULL,
-                description TEXT,
-                latitude DOUBLE NOT NULL,
-                longitude DOUBLE NOT NULL,
-                category VARCHAR(50) NOT NULL,
-                url TEXT
-            )
-        """)
-        conn.commit()
-    except mysql.connector.Error as err:
-        raise HTTPException(status_code=500, detail=str(err))
-    finally:
-        cursor.close()
-        conn.close()
+# @app.on_event("startup")
+# async def create_tables():
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     try:
+#         cursor.execute("""
+#             CREATE TABLE IF NOT EXISTS places (
+#                 id INT AUTO_INCREMENT PRIMARY KEY,
+#                 placename VARCHAR(255) NOT NULL,
+#                 description TEXT,
+#                 latitude DOUBLE NOT NULL,
+#                 longitude DOUBLE NOT NULL,
+#                 category VARCHAR(50) NOT NULL,
+#                 url TEXT
+#             )
+#         """)
+#         conn.commit()
+#     except mysql.connector.Error as err:
+#         raise HTTPException(status_code=500, detail=str(err))
+#     finally:
+#         cursor.close()
+#         conn.close()
 
 # 全ての場所を取得
 @app.get("/places", response_model=List[Place])
