@@ -16,7 +16,10 @@ app = FastAPI()
 # CORSミドルウェアを追加
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://tech0-gen-7-step4-student-finalproject-3-g6fnhbbhhegnccc0.canadacentral-01.azurewebsites.net"],
+    allow_origins=[
+        "https://tech0-gen-7-step4-student-finalproject-3-g6fnhbbhhegnccc0.canadacentral-01.azurewebsites.net",  # Production
+        "http://localhost:3000",  # Local development
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
