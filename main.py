@@ -7,6 +7,7 @@ import mysql.connector
 from mysql.connector import errorcode
 import os
 from dotenv import load_dotenv
+from datetime import datetime 
 
 # Load environment variables from .env file
 load_dotenv()
@@ -50,6 +51,14 @@ class Place(BaseModel):
     latitude: float
     longitude: float
     url: str
+
+class LocationData(BaseModel):
+    J_league_id: str
+    latitude: float
+    longitude: float
+    accuracy: float
+    timestamp: str
+    favorite_club: str
 
 # データベース接続関数
 def get_db_connection():
@@ -187,3 +196,25 @@ async def delete_place(place_id: int):
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+@app.get("/locations", response_model=List[LocationData])
+async def get_locations():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT J_league_id, latitude, longitude, accuracy, 
+                   timestamp, favorite_club 
+            FROM d_location_data
+        """)
+        locations = cursor.fetchall()
+        
+        # Convert datetime objects to strings
+        for location in locations:
+            if isinstance(location['timestamp'], datetime):
+                location['timestamp'] = location['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+        
+        return locations
+    finally:
+        cursor.close()
+        conn.close()
