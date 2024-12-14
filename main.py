@@ -44,13 +44,14 @@ if os.getenv("AZURE_DEPLOYMENT", "false").lower() == "true":
 
 # Place モデルの定義
 class Place(BaseModel):
-    place_id: Optional[int] = None  # Changed to match your table
+    place_id: Optional[int] = None  
     placename: str
     description: str
     category: str
     latitude: float
     longitude: float
     url: str
+    has_coupon: Optional[bool] = False
 
 class LocationData(BaseModel):
     J_league_id: str
