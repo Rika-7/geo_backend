@@ -52,6 +52,8 @@ class Place(BaseModel):
     longitude: float
     url: str
     has_coupon: Optional[bool] = False
+    image_url: Optional[str] = None
+    coupon_url: Optional[str] = None
 
 class LocationData(BaseModel):
     J_league_id: str
@@ -130,16 +132,30 @@ async def create_place(place: Place):
         conn.close()
 
 # IDで場所を取得
-@app.get("/places/{place_id}", response_model=Place)
-async def get_place(place_id: int):
+@app.put("/places/{place_id}", response_model=Place)
+async def update_place(place_id: int, place: Place):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT * FROM places WHERE id = %s", (place_id,))
-        place = cursor.fetchone()
-        if place is None:
+        cursor.execute("""
+            UPDATE places 
+            SET placename = %s, description = %s, latitude = %s, 
+                longitude = %s, category = %s, url = %s,
+                has_coupon = %s, image_url = %s, coupon_url = %s
+            WHERE id = %s
+        """, (
+            place.placename, place.description, place.latitude,
+            place.longitude, place.category, place.url,
+            place.has_coupon, place.image_url, place.coupon_url,
+            place_id
+        ))
+        conn.commit()
+        
+        if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Place not found")
-        return place
+            
+        cursor.execute("SELECT * FROM places WHERE id = %s", (place_id,))
+        return cursor.fetchone()
     finally:
         cursor.close()
         conn.close()
