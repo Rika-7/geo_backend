@@ -54,6 +54,7 @@ class Place(BaseModel):
     has_coupon: Optional[bool] = False
     image_url: Optional[str] = None
     coupon_url: Optional[str] = None
+    cover_image_url: Optional[str] = None  # Add this line
 
 class LocationData(BaseModel):
     J_league_id: str
@@ -141,20 +142,21 @@ async def update_place(place_id: int, place: Place):
             UPDATE places 
             SET placename = %s, description = %s, latitude = %s, 
                 longitude = %s, category = %s, url = %s,
-                has_coupon = %s, image_url = %s, coupon_url = %s
-            WHERE id = %s
+                has_coupon = %s, image_url = %s, coupon_url = %s,
+                cover_image_url = %s
+            WHERE place_id = %s
         """, (
             place.placename, place.description, place.latitude,
             place.longitude, place.category, place.url,
             place.has_coupon, place.image_url, place.coupon_url,
-            place_id
+            place.cover_image_url, place_id
         ))
         conn.commit()
         
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Place not found")
             
-        cursor.execute("SELECT * FROM places WHERE id = %s", (place_id,))
+        cursor.execute("SELECT * FROM places WHERE place_id = %s", (place_id,))
         return cursor.fetchone()
     finally:
         cursor.close()
