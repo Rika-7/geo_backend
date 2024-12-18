@@ -285,36 +285,50 @@ async def get_locations():
 @app.post("/traffic_advice", response_model=TrafficResponse)
 async def get_traffic_advice(request: TrafficRequest):
     try:
-        print(f"Received request: {request}")  # Debug log
+        # Hardcoded stadium coordinates for 町田GION stadium
+        GION_STADIUM = {
+            "latitude": 35.5466,
+            "longitude": 139.4769
+        }
         
+        # Game details
+        GAME_INFO = {
+            "home": "町田ゼルビア",
+            "away": "浦和レッズ",
+            "stadium": "町田GION stadium",
+            "datetime": "2024-12-19 14:00"
+        }
+
+        # Modify request to always use GION stadium as destination
+        request.destination_latitude = GION_STADIUM["latitude"]
+        request.destination_longitude = GION_STADIUM["longitude"]
+        request.game_time = GAME_INFO["datetime"]
+        request.favorite_club = f"{GAME_INFO['home']} vs {GAME_INFO['away']}"
+        
+        traffic_assistant = TrafficAssistant.get_instance()
+        traffic_assistant.ensure_initialized()
+        
+        # Get historical data for both teams
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        # Debug log for SQL query
         query = """
             SELECT J_league_id, latitude, longitude, accuracy, 
                    timestamp, favorite_club 
             FROM d_location_data
-            WHERE favorite_club = %s
+            WHERE favorite_club IN (%s, %s)
             ORDER BY timestamp DESC
             LIMIT 3
         """
-        print(f"Executing query with favorite_club: {request.favorite_club}")
-        
-        cursor.execute(query, (request.favorite_club,))
+        cursor.execute(query, (GAME_INFO["home"], GAME_INFO["away"]))
         historical_data = cursor.fetchall()
         
-        print(f"Retrieved historical data: {historical_data}")  # Debug log
-        
-        for data in historical_data:
-            if isinstance(data['timestamp'], datetime):
-                data['timestamp'] = data['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-        
-        traffic_assistant = TrafficAssistant.get_instance()
-        print("Got TrafficAssistant instance")  # Debug log
+        if isinstance(historical_data, list):
+            for data in historical_data:
+                if isinstance(data['timestamp'], datetime):
+                    data['timestamp'] = data['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
         
         advice = traffic_assistant.analyze_traffic(request, historical_data)
-        print(f"Generated advice: {advice}")  # Debug log
         
         response_parts = advice.split('\n\n')
         response = TrafficResponse(
@@ -327,13 +341,10 @@ async def get_traffic_advice(request: TrafficRequest):
         return response
         
     except Exception as e:
-        print(f"Error in get_traffic_advice: {str(e)}")  # Error log
-        import traceback
-        print(traceback.format_exc())  # Print full traceback
+        print(f"Error in get_traffic_advice: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         if 'cursor' in locals():
             cursor.close()
         if 'conn' in locals():
             conn.close()
-
