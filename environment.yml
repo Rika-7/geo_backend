@@ -1,6 +1,19 @@
 name: geo
 channels:
+  - conda-forge
   - defaults
-  - https://repo.anaconda.com/pkgs/main
-  - https://repo.anaconda.com/pkgs/r
-prefix: /opt/anaconda3/envs/geo
+dependencies:
+  - python=3.12.8
+  - pip
+  - fastapi=0.112.2
+  - python-dotenv=0.21.0
+  - mysql-connector-python=8.4.0
+  - uvicorn=0.32.1
+  - pydantic=2.8.2
+  - requests=2.32.3
+  - pytorch=2.5.1
+  - transformers=4.45.2
+  - numpy=1.26.4
+  - pandas=2.2.3
+  - pip:
+      - torch>=2.0.0
